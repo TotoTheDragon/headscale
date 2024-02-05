@@ -492,6 +492,27 @@ func (h *Headscale) validateNodeForOIDCCallback(
 			Str("node", node.Hostname).
 			Msg("node already registered, reauthenticating")
 
+		nodeKeyIf, nodeKeyFound := h.registrationCache.Get(machineKey.String())
+		
+		if nodeKeyFound {
+			var newNode *types.Node
+			newNode, oldNodeOK := nodeKeyIf.(*types.Node)
+			if (oldNodeOK && newNode.NodeKey.String() != node.NodeKey.String()) {
+				log.Trace().Caller().Str("old_node_key", node.NodeKey.String()).Str("new_node_key", newNode.NodeKey.String()).Msg("node has new key, update it")
+				err := h.db.NodeSetNodeKey(node, newNode.NodeKey)
+				if err != nil {
+					util.LogErr(err, "failed to set new node key")
+					http.Error(
+						writer,
+						"Failed to refresh node",
+						http.StatusInternalServerError,
+					)
+		
+					return nil, true, err
+				}
+			}
+		}
+
 		err := h.db.NodeSetExpiry(node, expiry)
 		if err != nil {
 			util.LogErr(err, "Failed to refresh node")
