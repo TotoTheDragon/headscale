@@ -511,6 +511,8 @@ func (h *Headscale) validateNodeForOIDCCallback(
 					return nil, true, err
 				}
 			}
+		} else {
+			log.Trace().Caller().Str("node", node.Hostname).Msg("already registered node, but no changed nodekey, debug...")
 		}
 
 		err := h.db.NodeSetExpiry(node, expiry)
