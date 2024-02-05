@@ -495,8 +495,8 @@ func (h *Headscale) validateNodeForOIDCCallback(
 		nodeKeyIf, nodeKeyFound := h.registrationCache.Get(machineKey.String())
 		
 		if nodeKeyFound {
-			var newNode *types.Node
-			newNode, oldNodeOK := nodeKeyIf.(*types.Node)
+			var newNode types.Node
+			newNode, oldNodeOK := nodeKeyIf.(types.Node)
 			if (oldNodeOK && newNode.NodeKey.String() != node.NodeKey.String()) {
 				log.Trace().Caller().Str("old_node_key", node.NodeKey.String()).Str("new_node_key", newNode.NodeKey.String()).Msg("node has new key, update it")
 				err := h.db.NodeSetNodeKey(node, newNode.NodeKey)
