@@ -552,19 +552,22 @@ func (h *Headscale) updateNodeOnlineStatus(online bool, node *types.Node) {
 
 	node.LastSeen = &now
 
-	statusUpdate := types.StateUpdate{
-		Type: types.StatePeerChangedPatch,
-		ChangePatches: []*tailcfg.PeerChange{
-			{
-				NodeID:   tailcfg.NodeID(node.ID),
-				Online:   &online,
-				LastSeen: &now,
+	// Only send a peerchange if online/offline status is changed
+	if node.IsOnline != &online {
+		statusUpdate := types.StateUpdate{
+			Type: types.StatePeerChangedPatch,
+			ChangePatches: []*tailcfg.PeerChange{
+				{
+					NodeID:   tailcfg.NodeID(node.ID),
+					Online:   &online,
+					LastSeen: &now,
+				},
 			},
-		},
-	}
-	if statusUpdate.Valid() {
-		ctx := types.NotifyCtx(context.Background(), "poll-nodeupdate-onlinestatus", node.Hostname)
-		h.nodeNotifier.NotifyWithIgnore(ctx, statusUpdate, node.MachineKey.String())
+		}
+		if statusUpdate.Valid() {
+			ctx := types.NotifyCtx(context.Background(), "poll-nodeupdate-onlinestatus", node.Hostname)
+			h.nodeNotifier.NotifyWithIgnore(ctx, statusUpdate, node.MachineKey.String())
+		}
 	}
 
 	err := h.db.DB.Transaction(func(tx *gorm.DB) error {
