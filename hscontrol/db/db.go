@@ -440,9 +440,7 @@ func (hsdb *HSDatabase) Read(fn func(rx *gorm.DB) error) error {
 }
 
 func Read[T any](db *gorm.DB, fn func(rx *gorm.DB) (T, error)) (T, error) {
-	rx := db.Begin()
-	defer rx.Rollback()
-	ret, err := fn(rx)
+	ret, err := fn(db)
 	if err != nil {
 		var no T
 		return no, err
@@ -451,13 +449,7 @@ func Read[T any](db *gorm.DB, fn func(rx *gorm.DB) (T, error)) (T, error) {
 }
 
 func (hsdb *HSDatabase) Write(fn func(tx *gorm.DB) error) error {
-	tx := hsdb.DB.Begin()
-	defer tx.Rollback()
-	if err := fn(tx); err != nil {
-		return err
-	}
-
-	return tx.Commit().Error
+	return hsdb.DB.Transaction(fn)
 }
 
 func Write[T any](db *gorm.DB, fn func(tx *gorm.DB) (T, error)) (T, error) {
