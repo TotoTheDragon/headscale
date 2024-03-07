@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"net/netip"
 	"time"
 
 	"github.com/rs/zerolog/log"
@@ -73,7 +74,14 @@ func (h *Headscale) handlePollCommon(
 	// The intended use is for clients to discover the DERP map at start-up
 	// before their first real endpoint update.
 	if !mapRequest.ReadOnly {
-		machine.Endpoints = mapRequest.Endpoints
+		endpoints := []string{}
+		for _, s := range mapRequest.Endpoints {
+			ip, _ := netip.ParseAddrPort(s)
+			if !ip.Addr().IsPrivate() {
+				endpoints = append(endpoints, s)
+			}
+		}
+		machine.Endpoints = endpoints
 		machine.LastSeen = &now
 	}
 
